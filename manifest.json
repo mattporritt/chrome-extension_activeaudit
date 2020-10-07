@@ -1,0 +1,16 @@
+{
+    "name": "Active Audit",
+    "version": "2020100700",
+    "description": "Extension for the Active Audit service to be used with the Moodle LMS",
+    "manifest_version": 2,
+
+    "content_scripts": [
+      {
+        "matches": [
+          "<all_urls>"
+        ],
+        "js": ["content.js"]
+      }
+    ]
+
+}
