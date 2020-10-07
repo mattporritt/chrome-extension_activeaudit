@@ -1,0 +1,24 @@
+{
+  "name": "chrome-extension_activeaudit",
+  "version": "1.0.0",
+  "description": "Extension for the Active Audit service to be used with the Moodle LMS",
+  "main": "content.js",
+  "scripts": {
+    "lint": "eslint ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattporritt/chrome-extension_activeaudit.git"
+  },
+  "author": "Matt Porritt <mattp@catalyst-au.net>",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/mattporritt/chrome-extension_activeaudit/issues"
+  },
+  "homepage": "https://github.com/mattporritt/chrome-extension_activeaudit#readme",
+  "devDependencies": {
+    "eslint": "^7.10.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}
