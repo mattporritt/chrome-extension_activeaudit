@@ -19,11 +19,3 @@
  * @copyright  2020 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-window.console.log('extenstion active audit loaded');
-
-document.addEventListener('readystatechange', event => {
-    if (event.target.readyState === 'complete') {
-        window.console.log('All dom finished');
-    }
-});

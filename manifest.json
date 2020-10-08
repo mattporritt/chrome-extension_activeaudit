@@ -3,14 +3,19 @@
     "version": "2020100700",
     "description": "Extension for the Active Audit service to be used with the Moodle LMS",
     "manifest_version": 2,
-
     "content_scripts": [
       {
         "matches": [
-          "<all_urls>"
+          "https://*/mod/quiz/view.php*",
+          "https://*/mod/quiz/startattempt.php*",
+          "https://*/mod/quiz/attempt.php*"
         ],
         "js": ["content.js"]
       }
-    ]
-
+    ],
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
+    }
 }
