@@ -22,6 +22,29 @@
 
 window.console.log('extenstion active audit loaded');
 
+const showPreview = () => {
+
+    // Send message to background, to update state.
+    let msg = {
+            sender: 'CONTENT',
+            type: 'ACTION',
+            content: 'SHOW_PREVIEW'
+    };
+
+    chrome.runtime.sendMessage(msg);
+
+    // Show the preview element.
+    Preview.showpreview();
+};
+
+const clientMessageReceive = (message) => {
+
+    if (message.content === 'SHOW_PREVIEW') {
+        showPreview();
+    }
+
+};
+
 /**
  * Handle received messages.
  *
@@ -33,8 +56,9 @@ const messagelistener = (event) => {
         return;
     }
 
-    // Show the preview element.
-    Preview.showpreview();
+    if (event.data.sender === 'CLIENT') {
+        clientMessageReceive(event.data);
+    }
 };
 
 // Add event listener for message passed from client and background scripts.
