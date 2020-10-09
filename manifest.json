@@ -10,7 +10,8 @@
           "https://*/mod/quiz/startattempt.php*",
           "https://*/mod/quiz/attempt.php*"
         ],
-        "js": ["content.js"]
+        "js": ["src/preview.js", "content.js"],
+        "css": ["style/content.css"]
       }
     ],
     "background": {

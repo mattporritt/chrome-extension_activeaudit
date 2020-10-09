@@ -14,7 +14,7 @@
 // along with this extension.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Javascript for client side operations.
+ * Javascript for background operations.
  *
  * @copyright  2020 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

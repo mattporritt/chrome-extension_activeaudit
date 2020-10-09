@@ -22,8 +22,23 @@
 
 window.console.log('extenstion active audit loaded');
 
-document.addEventListener('readystatechange', event => {
-    if (event.target.readyState === 'complete') {
-        window.console.log('All dom finished');
+/**
+ * Handle received messages.
+ *
+ * @method messagelistener
+ * @param {event} event The event object from the event listener.
+ */
+const messagelistener = (event) => {
+    if (event.origin !== window.origin) { // Only respond to messages from our own origin.
+        return;
     }
-});
+
+    // Show the preview element.
+    Preview.showpreview();
+};
+
+// Add event listener for message passed from client and background scripts.
+window.addEventListener('message', messagelistener);
+
+// Create an HTML element that will hold the webcam preview window.
+Preview.createpreview();
