@@ -31,7 +31,9 @@ const showPreview = () => {
             content: true
     };
 
-    chrome.runtime.sendMessage(msg);
+    chrome.runtime.sendMessage(msg,(response) => {
+        window.console.log('your stream is: ' + response.stream);
+    });
 
     // Show the preview element.
     Preview.showpreview();
@@ -39,6 +41,7 @@ const showPreview = () => {
 
 /**
  * Check the desired display status of the preview window from the background.
+ * If response is true display the preview window on the page.
  *
  * @method previewCheckDisplay
  */
@@ -49,20 +52,12 @@ const previewCheckDisplay = () => {
             content: 'CHECK_PREVIEW'
     };
 
-    chrome.runtime.sendMessage(msg);
-}
-
-/**
- * Action the response from the previewCheckDisplay message.
- * If response is true display the preview window on the page.
- *
- * @method previewCheckDisplay
- * @param {bool} show Shoe the preview window if true.
- */
-const previewCheckDisplayResponse = (show) => {
-    if (show == true) {
-        Preview.showpreview();
-    }
+    chrome.runtime.sendMessage(msg, (response) => {
+        if (response.status == true) {
+            Preview.showpreview();
+            window.console.log('your stream is: ' + response.stream);
+        }
+    });
 }
 
 /**
@@ -102,7 +97,7 @@ const clientMessageReceive = (event) => {
 
 //Mapping of received background message actions to methods that implement the actions.
 const backgroundMessageActions = {
-        'CHECK_PREVIEW': previewCheckDisplayResponse
+        // Background initiated message to method mapping goes here.
 };
 
 //Mapping of received client message actions to methods that implement the actions.

@@ -29,14 +29,14 @@ let showPreviewStatus = false;
  *
  * @method checkPreview.
  */
-const checkPreview = () => {
-    // Send message to content.
-    let msg = {
-            sender: 'BACKGROUND',
-            type: 'CHECK_PREVIEW',
-            content: showPreviewStatus
+const checkPreview = (content, response) => {
+
+    const responseMsg = {
+            status: showPreviewStatus,
+            stream: 'bahjoobar'
     };
-    contentMessageSend(msg);
+
+    response(responseMsg);
 };
 
 /**
@@ -44,8 +44,17 @@ const checkPreview = () => {
  *
  * @method showPreview.
  */
-const showPreview = () => {
-    showPreviewStatus = true;
+const showPreview = (content, response) => {
+    showPreviewStatus = true;  // Update the preview status.
+
+    // Start the workflow to get access to the users webcam etc.
+
+    const responseMsg = {
+            status: showPreviewStatus,
+            stream: 'foobar'
+    };
+
+    response(responseMsg);
 };
 
 
@@ -68,14 +77,14 @@ const contentMessageSend = (message) => {
  * @param {object} message The message object from the event listener.
  * @param {object} sender The sender object from the event listener.
  */
-const contentMessageReceive = (message, sender) => {
+const contentMessageReceive = (message, sender, response) => {
     if (message.sender !== 'CONTENT') {
         return;
     }
 
     // Call the appropriate method based on the message type.
     const method = messageActions[message.type];
-    method();
+    method(message.content, response);
 
 };
 
