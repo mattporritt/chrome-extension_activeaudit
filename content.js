@@ -27,8 +27,8 @@ const showPreview = () => {
     // Send message to background, to update state.
     let msg = {
             sender: 'CONTENT',
-            type: 'ACTION',
-            content: 'SHOW_PREVIEW'
+            type: 'SHOW_PREVIEW',
+            content: true
     };
 
     chrome.runtime.sendMessage(msg);
@@ -38,6 +38,34 @@ const showPreview = () => {
 };
 
 /**
+ * Check the desired display status of the preview window from the background.
+ *
+ * @method previewCheckDisplay
+ */
+const previewCheckDisplay = () => {
+    let msg = {
+            sender: 'CONTENT',
+            type: 'CHECK_PREVIEW',
+            content: 'CHECK_PREVIEW'
+    };
+
+    chrome.runtime.sendMessage(msg);
+}
+
+/**
+ * Action the response from the previewCheckDisplay message.
+ * If response is true display the preview window on the page.
+ *
+ * @method previewCheckDisplay
+ * @param {bool} show Shoe the preview window if true.
+ */
+const previewCheckDisplayResponse = (show) => {
+    if (show == true) {
+        Preview.showpreview();
+    }
+}
+
+/**
  * Handle received background messages.
  *
  * @method backgroundMessageReceive
@@ -45,8 +73,13 @@ const showPreview = () => {
  * @param {object} sender The sender object from the event listener.
  */
 const backgroundMessageReceive = (message, sender) => {
-    window.console.log(message);
-    window.console.log(sender);
+    if (message.sender !== 'BACKGROUND') {
+        return;
+    }
+
+    // Call the appropriate method based on the message type.
+    const method = backgroundMessageActions[message.type];
+    method(message.content);
 };
 
 /**
@@ -62,9 +95,19 @@ const clientMessageReceive = (event) => {
         return;
     }
 
-    if (event.data.content === 'SHOW_PREVIEW') {
-        showPreview();
-    }
+    // Call the appropriate method based on the message type.
+    const method = clientMessageActions[event.data.type];
+    method(event.data.content);
+};
+
+//Mapping of received background message actions to methods that implement the actions.
+const backgroundMessageActions = {
+        'CHECK_PREVIEW': previewCheckDisplayResponse
+};
+
+//Mapping of received client message actions to methods that implement the actions.
+const clientMessageActions = {
+        'SHOW_PREVIEW': showPreview
 };
 
 // Add event listener for message passed from client scripts.
@@ -75,3 +118,6 @@ chrome.runtime.onMessage.addListener(backgroundMessageReceive);
 
 // Create an HTML element that will hold the webcam preview window.
 Preview.createpreview();
+
+// Check if we need to display the preview window.
+previewCheckDisplay();

@@ -132,8 +132,7 @@ const Preview = (() => {
      * @method showpreview
      */
     PreviewObj.showpreview = () => {
-        const introElement = document.getElementById('intro');
-        introElement.appendChild(previewContainer);
+        document.body.append(previewContainer);
     };
 
     // Return the "public" methods.

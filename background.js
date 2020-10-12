@@ -20,6 +20,35 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+// Track the status of the preview window.
+let showPreviewStatus = false;
+
+/**
+ * Return the current state of the preview window and send a message to content space with the state.
+ * Used to determine if we should load the preview window on page load.
+ *
+ * @method checkPreview.
+ */
+const checkPreview = () => {
+    // Send message to content.
+    let msg = {
+            sender: 'BACKGROUND',
+            type: 'CHECK_PREVIEW',
+            content: showPreviewStatus
+    };
+    contentMessageSend(msg);
+};
+
+/**
+ * Set the preview status to true.
+ *
+ * @method showPreview.
+ */
+const showPreview = () => {
+    showPreviewStatus = true;
+};
+
+
 /**
  * Send message to the content script.
  *
@@ -40,16 +69,20 @@ const contentMessageSend = (message) => {
  * @param {object} sender The sender object from the event listener.
  */
 const contentMessageReceive = (message, sender) => {
-    console.log(message);
-    console.log(sender);
+    if (message.sender !== 'CONTENT') {
+        return;
+    }
 
-    // Send message to content.
-    let msg = {
-            sender: 'BACKGROUND',
-            type: 'TEST',
-            content: 'TEST'
-    };
-    contentMessageSend(msg);
+    // Call the appropriate method based on the message type.
+    const method = messageActions[message.type];
+    method();
+
+};
+
+// Mapping of received message actions to methods that implement the actions.
+const messageActions = {
+        'CHECK_PREVIEW': checkPreview,
+        'SHOW_PREVIEW': showPreview
 };
 
 // Add event listener for messages from content scripts.
