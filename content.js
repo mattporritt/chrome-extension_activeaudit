@@ -31,12 +31,41 @@ const showPreview = () => {
             content: true
     };
 
-    chrome.runtime.sendMessage(msg,(response) => {
-        window.console.log('your stream is: ' + response.stream);
+    const constraints = {
+            audio: false,
+            video: true
+          };
+
+    chrome.runtime.sendMessage(msg, (response) => {
+        window.console.log(response);
+        if (response.status == 'NotAllowedError') {
+            navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                window.console.log(stream);
+                
+                msg = {
+                        sender: 'CONTENT',
+                        type: 'GET_MEDIA',
+                        content: true
+                };
+                
+                chrome.runtime.sendMessage(msg, (response) => {
+                    window.console.log(stream);
+                });
+                
+              })
+              .catch(function(err) {
+                  window.console.log(err);
+              });
+        } else {
+            // Assume things are good.
+            window.console.log('your stream is: ' + response.stream);
+         // Show the preview element.
+            Preview.showpreview();
+        }
+
     });
 
-    // Show the preview element.
-    Preview.showpreview();
 };
 
 /**

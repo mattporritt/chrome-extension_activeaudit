@@ -23,6 +23,9 @@
 // Track the status of the preview window.
 let showPreviewStatus = false;
 
+// Media stream.
+let mediaStream = false;
+
 /**
  * Return the current state of the preview window and send a message to content space with the state.
  * Used to determine if we should load the preview window on page load.
@@ -33,11 +36,34 @@ const checkPreview = (content, response) => {
 
     const responseMsg = {
             status: showPreviewStatus,
-            stream: 'bahjoobar'
+            stream: mediaStream
     };
 
     response(responseMsg);
 };
+
+const getMedia = (content, response) => {
+    let responseMsg = {
+            status: null,
+            stream: null
+    };
+
+    // Start the workflow to get access to the users webcam etc.
+    Media.init()
+    .then((media) => {
+         if (media.status == 'NotAllowedError') {
+            responseMsg.status = 'NotAllowedError';
+
+        } else {
+            // Assume things are good.
+            mediaStream = media.stream;
+            responseMsg.status = 'OK';
+            responseMsg.stream = media.stream;
+        }
+
+        response(responseMsg);
+    });
+}
 
 /**
  * Set the preview status to true.
@@ -45,17 +71,26 @@ const checkPreview = (content, response) => {
  * @method showPreview.
  */
 const showPreview = (content, response) => {
-    showPreviewStatus = true;  // Update the preview status.
-
-    // Start the workflow to get access to the users webcam etc.
-    Media.init();
-
-    const responseMsg = {
-            status: showPreviewStatus,
-            stream: 'foobar'
+    let responseMsg = {
+            status: null,
+            stream: null
     };
 
-    response(responseMsg);
+    // Start the workflow to get access to the users webcam etc.
+    Media.init()
+    .then((media) => {
+         if (media.status == 'NotAllowedError') {
+            responseMsg.status = 'NotAllowedError';
+
+        } else {
+            // Assume things are good.
+            mediaStream = media.stream;
+            responseMsg.status = 'OK';
+            responseMsg.stream = media.stream;
+        }
+
+        response(responseMsg);
+    });
 };
 
 
@@ -87,12 +122,14 @@ const contentMessageReceive = (message, sender, response) => {
     const method = messageActions[message.type];
     method(message.content, response);
 
+    return true;
 };
 
 // Mapping of received message actions to methods that implement the actions.
 const messageActions = {
         'CHECK_PREVIEW': checkPreview,
-        'SHOW_PREVIEW': showPreview
+        'SHOW_PREVIEW': showPreview,
+        'GET_MEDIA': getMedia
 };
 
 // Add event listener for messages from content scripts.

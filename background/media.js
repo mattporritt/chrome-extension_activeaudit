@@ -27,13 +27,45 @@
 const Media = (() => {
     MediaObj = {};
 
+    // Module level variables.
+    const constraints = {
+            audio: false,
+            video: true
+          };
+
+    function handleSuccess(stream) {
+        const videoTracks = stream.getVideoTracks();
+        console.log('Got stream with constraints:', constraints);
+        console.log(`Using video device: ${videoTracks[0].label}`);
+      }
+
     /**
      * Initialise media sharing.
      *
      * @method init
      */
-    MediaObj.init = () => {
+    MediaObj.init = async () => {
         console.log('initialising media');
+
+        let response = {
+                status: 'OK',
+                stream: null
+        };
+
+        try {
+            response.stream = await navigator.mediaDevices.getUserMedia(constraints);
+          /* use the stream */
+          return response;
+        } catch(err) {
+            if (err.name === 'NotAllowedError') {
+                response.status = 'NotAllowedError';
+            } else {
+                response.status = 'FAIL';
+                console.log(err);
+            }
+
+            return response;
+        }
     };
 
     // Return the "public" methods.
