@@ -10,13 +10,17 @@
           "https://*/mod/quiz/startattempt.php*",
           "https://*/mod/quiz/attempt.php*"
         ],
-        "js": ["src/preview.js", "content.js"],
+        "js": [
+          "content/preview.js",
+          "content.js"
+        ],
         "css": ["style/content.css"]
       }
     ],
     "background": {
         "scripts": [
-            "background.js"
+          "background/media.js",
+          "background.js"
         ],
         "persistent": true
     }

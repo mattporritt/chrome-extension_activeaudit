@@ -48,6 +48,7 @@ const showPreview = (content, response) => {
     showPreviewStatus = true;  // Update the preview status.
 
     // Start the workflow to get access to the users webcam etc.
+    Media.init();
 
     const responseMsg = {
             status: showPreviewStatus,
