@@ -20,9 +20,37 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    console.log(request);
+/**
+ * Send message to the content script.
+ *
+ * @method contentMessageSend
+ * @param {object} message The messge to send.
+ */
+const contentMessageSend = (message) => {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, message);
+    });
+};
+
+/**
+ * Handle messages sent from the content script.
+ *
+ * @method contentMessageReceive
+ * @param {object} message The message object from the event listener.
+ * @param {object} sender The sender object from the event listener.
+ */
+const contentMessageReceive = (message, sender) => {
+    console.log(message);
     console.log(sender);
-  });
- 
+
+    // Send message to content.
+    let msg = {
+            sender: 'BACKGROUND',
+            type: 'TEST',
+            content: 'TEST'
+    };
+    contentMessageSend(msg);
+};
+
+// Add event listener for messages from content scripts.
+chrome.runtime.onMessage.addListener(contentMessageReceive);

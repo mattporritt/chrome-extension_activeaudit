@@ -20,7 +20,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-window.console.log('extenstion active audit loaded');
+window.console.log('extension active audit loaded');
 
 const showPreview = () => {
 
@@ -37,32 +37,41 @@ const showPreview = () => {
     Preview.showpreview();
 };
 
-const clientMessageReceive = (message) => {
-
-    if (message.content === 'SHOW_PREVIEW') {
-        showPreview();
-    }
-
+/**
+ * Handle received background messages.
+ *
+ * @method backgroundMessageReceive
+ * @param {object} message The message object from the event listener.
+ * @param {object} sender The sender object from the event listener.
+ */
+const backgroundMessageReceive = (message, sender) => {
+    window.console.log(message);
+    window.console.log(sender);
 };
 
 /**
- * Handle received messages.
+ * Handle received client messages.
  *
- * @method messagelistener
+ * @method clientMessageReceive
  * @param {event} event The event object from the event listener.
  */
-const messagelistener = (event) => {
+const clientMessageReceive = (event) => {
     if (event.origin !== window.origin) { // Only respond to messages from our own origin.
+        return;
+    } else if (event.data.sender !== 'CLIENT') { // Only action specific client messages.
         return;
     }
 
-    if (event.data.sender === 'CLIENT') {
-        clientMessageReceive(event.data);
+    if (event.data.content === 'SHOW_PREVIEW') {
+        showPreview();
     }
 };
 
-// Add event listener for message passed from client and background scripts.
-window.addEventListener('message', messagelistener);
+// Add event listener for message passed from client scripts.
+window.addEventListener('message', clientMessageReceive);
+
+//Add event listener for message passed from background scripts.
+chrome.runtime.onMessage.addListener(backgroundMessageReceive);
 
 // Create an HTML element that will hold the webcam preview window.
 Preview.createpreview();
