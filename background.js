@@ -42,57 +42,116 @@ const checkPreview = (content, response) => {
     response(responseMsg);
 };
 
-const getMedia = (content, response) => {
-    let responseMsg = {
-            status: null,
-            stream: null
-    };
-
-    // Start the workflow to get access to the users webcam etc.
-    Media.init()
-    .then((media) => {
-         if (media.status == 'NotAllowedError') {
-            responseMsg.status = 'NotAllowedError';
-
-        } else {
-            // Assume things are good.
-            mediaStream = media.stream;
-            responseMsg.status = 'OK';
-            responseMsg.stream = media.stream;
-        }
-
-        response(responseMsg);
-    });
-}
-
 /**
- * Set the preview status to true.
+ * Try to get access to the users media devices.
+ * Returns a promise that resolves on success and rejects on failure.
  *
- * @method showPreview.
+ * @method getMedia
+ * @return {Promise}
  */
-const showPreview = (content, response) => {
-    let responseMsg = {
-            status: null,
-            stream: null
-    };
-
-    // Start the workflow to get access to the users webcam etc.
-    Media.init()
-    .then((media) => {
-         if (media.status == 'NotAllowedError') {
-            responseMsg.status = 'NotAllowedError';
-
-        } else {
-            // Assume things are good.
-            mediaStream = media.stream;
-            responseMsg.status = 'OK';
-            responseMsg.stream = media.stream;
-        }
-
-        response(responseMsg);
+const getMedia = () => {
+    return new Promise((resolve, reject) => {
+        // Start the workflow to get access to the users webcam etc.
+        Media.init()
+        .then((media) => {
+             if (media.status == 'OK') {
+                 // Set the media stream to the module level.
+                 mediaStream = media.stream;
+                 resolve(media);
+            } else {
+                reject(media);
+            }
+        });
     });
 };
 
+/**
+ * Start the processing to show the preview window.
+ * This method handles getting access to the users media.
+ *
+ * @method processPreview.
+ */
+const processPreview = (content) => {
+    // Try to get access to the users media devices.
+    getMedia()
+    .then((response) => {
+        response(responseMsg);
+        // Send good to go message to content space.
+    })
+    .catch((response) => {
+        if (response.status = 'NotAllowedError') {
+            // Background scripts can only access a users media devices if they have already have been granted access.
+            // However, background scripts cannot ask for this permission.
+            // So we need to create a content script that exists on the same "domain" (chrome://extensions/)
+            // as the background. Then this script can ask for permission. Once this content script has permission,
+            // the background can then re-ask for permission as the "domain" has already been given access.
+            // Yes, this is confusing and silly.
+
+            // To do this we programatically make a frame and add it to the clients page.
+            // This page will then ask for permission to access the users media devices.
+            // Then the pages javascript will send a message back to us here in the background space with its result.
+            const iframecode = "ifr = document.createElement('iframe');" +
+            "ifr.setAttribute('allow', 'microphone; camera');" +
+            "ifr.style.display = 'none';" +
+            "ifr.src = chrome.runtime.getURL('assets/mediaaccess.html');" +
+            "document.body.appendChild(ifr);";
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.executeScript(tabs[0].id, {code: iframecode});
+            });
+        } else {
+            // We have a fail we can't recover from. Let the content script know.
+            let msg = {
+                    sender: 'BACKGROUND',
+                    type: 'MEDIA_FAIL',
+                    content: response
+            };
+            contentMessageSend(msg);
+        }
+
+    });
+};
+
+/**
+ * Handle the response from the content script that asks users for access to their media devices.
+ * Send appropratite messages back to the main content script with the response.
+ *
+ * @method mediaAccess
+ */
+const mediaAccess = (content) => {
+    if (content.status == 'OK') {
+        // We should now have permission to the users media devices.
+        // Lets try to access them.
+        getMedia()
+        .then((response) => {
+            console.log(response);
+            // Send good to go message to content space.
+            let msg = {
+                    sender: 'BACKGROUND',
+                    type: 'MEDIA_SUCCESS',
+                    content: response
+            };
+            contentMessageSend(msg);
+        })
+        .catch((response) => {
+            // We have a fail we can't recover from. Let the content script know.
+            let msg = {
+                    sender: 'BACKGROUND',
+                    type: 'MEDIA_FAIL',
+                    content: response
+            };
+            contentMessageSend(msg);
+        });
+
+    } else {
+        // We have a fail we can't recover from. Let the content script know.
+        let msg = {
+                sender: 'BACKGROUND',
+                type: 'MEDIA_FAIL',
+                content: content
+        };
+        contentMessageSend(msg);
+    }
+};
 
 /**
  * Send message to the content script.
@@ -128,8 +187,8 @@ const contentMessageReceive = (message, sender, response) => {
 // Mapping of received message actions to methods that implement the actions.
 const messageActions = {
         'CHECK_PREVIEW': checkPreview,
-        'SHOW_PREVIEW': showPreview,
-        'GET_MEDIA': getMedia
+        'PROCESS_PREVIEW': processPreview,
+        'MEDIA_ACCESS': mediaAccess
 };
 
 // Add event listener for messages from content scripts.

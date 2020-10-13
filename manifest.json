@@ -23,5 +23,7 @@
           "background.js"
         ],
         "persistent": true
-    }
+    },
+    "permissions": ["https://*/*", "webNavigation", "activeTab"],
+    "web_accessible_resources": ["assets/*"]
 }
