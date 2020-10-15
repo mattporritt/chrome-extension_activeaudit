@@ -22,6 +22,8 @@
 
 window.console.log('extension active audit loaded');
 
+let pc = null;
+
 /**
  * Start the processing to show the preview video window on the page.
  * This method is triggered from a message sent from the client.
@@ -65,9 +67,47 @@ const previewCheckDisplay = () => {
     });
 }
 
-const mediaSuccess = (message) => {
-    window.console.log(message);
-   // Preview.showpreview(message.stream);
+const onIceCandidateSend = async(event) => {
+    let msg = {
+            sender: 'CONTENT',
+            type: 'ICE_CANDIDATE_SEND',
+            content: event.candidate
+    };
+    chrome.runtime.sendMessage(msg);
+};
+
+const onIceCandidateRecv = (candidate) => {
+    if (candidate) {
+        pc.addIceCandidate(candidate);
+    }
+};
+
+const rtcReceiveOffer = async(message) => {
+    pc = new RTCPeerConnection();
+    pc.addEventListener('icecandidate', onIceCandidateSend);
+
+    // Event listener for when we get a track.
+    pc.addEventListener('track', (event) => {
+        Preview.showpreview(event.streams[0]);
+    });
+
+    try {
+        await pc.setRemoteDescription(new RTCSessionDescription(message));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        let msg = {
+                sender: 'CONTENT',
+                type: 'RTC_SEND_OFFER',
+                content: pc.localDescription
+        };
+
+        chrome.runtime.sendMessage(msg);
+
+      } catch (error) {
+          window.console.log('Failed to create session description: ' + error.toString());
+      }
+
 };
 
 const mediaFail = (message) => {
@@ -112,7 +152,8 @@ const clientMessageReceive = (event) => {
 //Mapping of received background message actions to methods that implement the actions.
 const backgroundMessageActions = {
         'MEDIA_FAIL': mediaFail,
-        'MEDIA_SUCCESS': mediaSuccess,
+        'RTC_SEND_OFFER': rtcReceiveOffer,
+        'ICE_CANDIDATE_SEND': onIceCandidateRecv
 };
 
 //Mapping of received client message actions to methods that implement the actions.

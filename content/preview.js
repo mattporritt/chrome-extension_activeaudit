@@ -115,11 +115,7 @@ const Preview = (() => {
         previewContainer.id = 'activeaudit-preview-container';
         const previewContainerHeader = document.createElement('div');
         previewContainerHeader.id = 'activeaudit-preview-container-header';
-        const videoElement = document.createElement('video');
-        videoElement.id = 'activeaudit-preview-video';
-
         previewContainer.appendChild(previewContainerHeader);
-        previewContainer.appendChild(videoElement);
 
         // Add initial event listeners.
         previewContainer.addEventListener('mousedown', previewContainerOnmousedown);
@@ -135,10 +131,15 @@ const Preview = (() => {
      * @param {object} stream The video stream to show.
      * @method showpreview
      */
-    PreviewObj.showpreview = (stream) => {
+    PreviewObj.showpreview = async(stream) => {
+        const videoElement = document.createElement('video');
+        videoElement.id = 'activeaudit-preview-video';
+        videoElement.autoplay = true;
+        videoElement.playsinline = true;
+        videoElement.srcObject = stream;
+
+        previewContainer.appendChild(videoElement);
         document.body.append(previewContainer);
-        let video = document.getElementById('activeaudit-preview-video');
-        video.srcObject = stream;
     };
 
     // Return the "public" methods.

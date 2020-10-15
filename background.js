@@ -26,6 +26,8 @@ let showPreviewStatus = false;
 // Media stream.
 let mediaStream = false;
 
+let pc = null;
+
 /**
  * Return the current state of the preview window and send a message to content space with the state.
  * Used to determine if we should load the preview window on page load.
@@ -40,6 +42,51 @@ const checkPreview = (content, response) => {
     };
 
     response(responseMsg);
+};
+
+const onIceCandidateSend = async(event) => {
+    let msg = {
+            sender: 'BACKGROUND',
+            type: 'ICE_CANDIDATE_SEND',
+            content: event.candidate
+    };
+    contentMessageSend(msg);
+};
+
+const onIceCandidateRecv = (candidate) => {
+    if (candidate) {
+        pc.addIceCandidate(candidate);
+    }
+};
+
+const setupContentRTC = async(stream) => {
+    const offerOptions = {
+            offerToReceiveAudio: 1,
+            offerToReceiveVideo: 1
+    };
+    pc = new RTCPeerConnection(); // Empty ICE server object as it is a "local" connection.
+    pc.addStream(stream); // Add the stream to the peer connection object.
+    pc.addEventListener('icecandidate', onIceCandidateSend);
+
+    try {
+        // Create the offer and update the local description.
+        const offer = await pc.createOffer(offerOptions);
+        await pc.setLocalDescription(offer);
+
+        // Send a message to the content with the local description.
+        let msg = {
+                sender: 'BACKGROUND',
+                type: 'RTC_SEND_OFFER',
+                content: pc.localDescription
+        };
+        contentMessageSend(msg);
+    } catch (error) {
+        console.log('Failed to create session description: ' + error.toString());
+    }
+};
+
+const rtcReceiveOffer = (message) => {
+    pc.setRemoteDescription(new RTCSessionDescription(message));
 };
 
 /**
@@ -75,8 +122,8 @@ const processPreview = (content) => {
     // Try to get access to the users media devices.
     getMedia()
     .then((response) => {
-        response(responseMsg);
         // Send good to go message to content space.
+        response(responseMsg);
     })
     .catch((response) => {
         if (response.status = 'NotAllowedError') {
@@ -124,13 +171,16 @@ const mediaAccess = (content) => {
         getMedia()
         .then((response) => {
             console.log(response);
-            // Send good to go message to content space.
-            let msg = {
-                    sender: 'BACKGROUND',
-                    type: 'MEDIA_SUCCESS',
-                    content: response
-            };
-            contentMessageSend(msg);
+            // We have accessed the users media device and they are now active.
+            // We now need to set up some RTC Peer connections to share the media with.
+            // First we send the media to the client so they can see themselves.
+            // Next we send the video to the remote server for recording and monitoring.
+
+            // Setup and send the video strea, to content.
+            setupContentRTC(response.stream);
+
+            // TODO: send media to the server.
+
         })
         .catch((response) => {
             // We have a fail we can't recover from. Let the content script know.
@@ -188,7 +238,9 @@ const contentMessageReceive = (message, sender, response) => {
 const messageActions = {
         'CHECK_PREVIEW': checkPreview,
         'PROCESS_PREVIEW': processPreview,
-        'MEDIA_ACCESS': mediaAccess
+        'MEDIA_ACCESS': mediaAccess,
+        'RTC_SEND_OFFER': rtcReceiveOffer,
+        'ICE_CANDIDATE_SEND': onIceCandidateRecv
 };
 
 // Add event listener for messages from content scripts.
