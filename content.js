@@ -24,6 +24,29 @@ window.console.log('extension active audit loaded');
 
 let pc = null;
 
+const rtcTrackListener = (event) => {
+    window.console.log('track event listener fired');
+    Preview.showpreview(event.streams[0]);
+
+    // Tell the backend we have everything.
+    let msg = {
+            sender: 'CONTENT',
+            type: 'RTC_DONE',
+            content: 'RTC_DONE'
+    };
+
+    chrome.runtime.sendMessage(msg);
+};
+
+const rtcSetup = () => {
+
+    if (!pc) {
+        pc = new RTCPeerConnection();
+        pc.addEventListener('icecandidate', onIceCandidateSend);
+        pc.addEventListener('track', rtcTrackListener); // Event listener for when we get a track.
+    }
+};
+
 /**
  * Start the processing to show the preview video window on the page.
  * This method is triggered from a message sent from the client.
@@ -59,12 +82,7 @@ const previewCheckDisplay = () => {
             content: 'CHECK_PREVIEW'
     };
 
-    chrome.runtime.sendMessage(msg, (response) => {
-        if (response.status == true) {
-            Preview.showpreview();
-            window.console.log('your stream is: ' + response.stream);
-        }
-    });
+    chrome.runtime.sendMessage(msg);
 }
 
 const onIceCandidateSend = async(event) => {
@@ -83,14 +101,6 @@ const onIceCandidateRecv = (candidate) => {
 };
 
 const rtcReceiveOffer = async(message) => {
-    pc = new RTCPeerConnection();
-    pc.addEventListener('icecandidate', onIceCandidateSend);
-
-    // Event listener for when we get a track.
-    pc.addEventListener('track', (event) => {
-        Preview.showpreview(event.streams[0]);
-    });
-
     try {
         await pc.setRemoteDescription(new RTCSessionDescription(message));
         const answer = await pc.createAnswer();
@@ -164,8 +174,11 @@ const clientMessageActions = {
 // Add event listener for message passed from client scripts.
 window.addEventListener('message', clientMessageReceive);
 
-//Add event listener for message passed from background scripts.
+// Add event listener for message passed from background scripts.
 chrome.runtime.onMessage.addListener(backgroundMessageReceive);
+
+//  Do initila RTC setup tasks.
+rtcSetup();
 
 // Create an HTML element that will hold the webcam preview window.
 Preview.createpreview();

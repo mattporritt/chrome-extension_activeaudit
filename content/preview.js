@@ -134,6 +134,7 @@ const Preview = (() => {
     PreviewObj.showpreview = async(stream) => {
         const videoElement = document.createElement('video');
         videoElement.id = 'activeaudit-preview-video';
+        videoElement.muted = true;  // Video will not autoplay if sound is not muted. We don't need sound for the preview video.
         videoElement.autoplay = true;
         videoElement.playsinline = true;
         videoElement.srcObject = stream;

@@ -23,8 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-window.console.log('media init script loaded at: ' + location.href);
-
 // TODO: Pass in the constraints as a message from the background.
 const constraints = {
         audio: false,

@@ -34,14 +34,16 @@ let pc = null;
  *
  * @method checkPreview.
  */
-const checkPreview = (content, response) => {
+const checkPreview = () => {
 
-    const responseMsg = {
-            status: showPreviewStatus,
-            stream: mediaStream
-    };
+    if (showPreviewStatus) {
+        console.log('we have an existing preview');
+        setupContentRTC(mediaStream);
+    }
+};
 
-    response(responseMsg);
+const rtcDone = () => {
+    showPreviewStatus = true;
 };
 
 const onIceCandidateSend = async(event) => {
@@ -64,9 +66,21 @@ const setupContentRTC = async(stream) => {
             offerToReceiveAudio: 1,
             offerToReceiveVideo: 1
     };
-    pc = new RTCPeerConnection(); // Empty ICE server object as it is a "local" connection.
-    pc.addStream(stream); // Add the stream to the peer connection object.
-    pc.addEventListener('icecandidate', onIceCandidateSend);
+
+    if (!pc){
+        pc = new RTCPeerConnection(); // Empty ICE server object as it is a "local" connection.
+        pc.addStream(stream); // Add the stream to the peer connection object.
+        pc.addEventListener('icecandidate', onIceCandidateSend);
+        pc.addEventListener('iceconnectionstatechange', () => {
+            console.log('ice state change', pc.iceConnectionState);
+            if (pc.iceConnectionState == 'disconnected') {
+                console.log('trying reconnect');
+                setupContentRTC(mediaStream);
+            }
+        });
+    } else {
+        offerOptions.iceRestart = true;
+    }
 
     try {
         // Create the offer and update the local description.
@@ -176,7 +190,7 @@ const mediaAccess = (content) => {
             // First we send the media to the client so they can see themselves.
             // Next we send the video to the remote server for recording and monitoring.
 
-            // Setup and send the video strea, to content.
+            // Setup and send the video stream to content.
             setupContentRTC(response.stream);
 
             // TODO: send media to the server.
@@ -240,7 +254,8 @@ const messageActions = {
         'PROCESS_PREVIEW': processPreview,
         'MEDIA_ACCESS': mediaAccess,
         'RTC_SEND_OFFER': rtcReceiveOffer,
-        'ICE_CANDIDATE_SEND': onIceCandidateRecv
+        'ICE_CANDIDATE_SEND': onIceCandidateRecv,
+        'RTC_DONE': rtcDone
 };
 
 // Add event listener for messages from content scripts.

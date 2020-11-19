@@ -30,7 +30,8 @@ const Media = (() => {
     // Module level variables.
     const constraints = {
             audio: false,
-            video: true
+            video: true,
+            IceRestart: true
           };
 
     function handleSuccess(stream) {
